@@ -16,6 +16,10 @@ class Transaction(models.Model):
         (TRANSACTION_TYPE_WITHDRAW, 'withdraw'),
     )
 
+    seller = models.ForeignKey(Seller, on_delete=models.PROTECT, related_name='transactions')
+
     amount = models.PositiveBigIntegerField()
     type = models.CharField(max_length=50, choices=TYPES)
     time = models.DateTimeField(auto_now_add=True)
+
+    extra_data = models.JSONField(blank=True, default=dict)
