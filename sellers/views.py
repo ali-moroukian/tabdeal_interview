@@ -1,5 +1,5 @@
 from django.db import transaction
-from rest_framework.generics import get_object_or_404
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -16,7 +16,11 @@ class ChargeSellerAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         amount = serializer.validated_data.get('amount')
 
-        seller = get_object_or_404(Seller, id=kwargs['seller_id'])
+        try:
+            seller = Seller.objects.select_for_update().get(id=kwargs['seller_id'])
+        except Seller.DoesNotExist:
+            raise NotFound
+
         seller.balance += amount
         seller.save()
 
@@ -33,7 +37,10 @@ class ChargePhoneAPIView(APIView):
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        seller = get_object_or_404(Seller, id=kwargs['seller_id'])
+        try:
+            seller = Seller.objects.select_for_update().get(id=kwargs['seller_id'])
+        except Seller.DoesNotExist:
+            raise NotFound
 
         serializer = ChargePhoneSerializer(data=self.request.data, context={'seller': seller})
         serializer.is_valid(raise_exception=True)
